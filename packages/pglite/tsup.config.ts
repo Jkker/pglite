@@ -16,6 +16,25 @@ const replaceAssertPlugin = {
   },
 }
 
+const replaceDirectEvalPlugin = {
+  name: 'replace-direct-eval',
+  setup(build: any) {
+    // Replace direct eval with indirect eval to avoid Vite 8.x/rolldown warnings
+    build.onLoad({ filter: /pglite\.js$/ }, async (args: any) => {
+      const contents = await fs.promises.readFile(args.path, 'utf8')
+      // Replace ASM_CONSTS[start]=eval with indirect eval: ASM_CONSTS[start]=(0, eval)
+      const transformed = contents.replace(
+        /ASM_CONSTS\[start\]=eval\(/g,
+        'ASM_CONSTS[start]=(0, eval)('
+      )
+      return {
+        contents: transformed,
+        loader: 'js',
+      }
+    })
+  },
+}
+
 const entryPoints = [
   'src/index.ts',
   'src/fs/nodefs.ts',
@@ -51,7 +70,7 @@ export default defineConfig([
     },
     clean: true,
     external: ['../release/pglite.js', '../release/pglite.cjs'],
-    esbuildPlugins: [replaceAssertPlugin],
+    esbuildPlugins: [replaceAssertPlugin, replaceDirectEvalPlugin],
     minify: minify,
     shims: true, // Convert import.meta.url to a shim for CJS
     format: ['esm', 'cjs'],

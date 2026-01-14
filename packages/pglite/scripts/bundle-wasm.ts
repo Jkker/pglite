@@ -52,6 +52,21 @@ const copyFiles = async (srcDir: string, destDir: string) => {
 
 async function main() {
   await copyFiles('./release', './dist')
+  
+  // Replace direct eval with indirect eval to avoid Vite 8.x warnings
+  // This transforms eval(...) to (0, eval)(...) which is indirect eval
+  // Pattern matches eval( but not when preceded by . or , or already indirect
+  await findAndReplaceInFile(
+    /(?<![.,\w])\beval\s*\(/g,
+    '(0, eval)(',
+    './dist/pglite.js'
+  )
+  await findAndReplaceInFile(
+    /(?<![.,\w])\beval\s*\(/g,
+    '(0, eval)(',
+    './dist/pglite.cjs'
+  )
+  
   await findAndReplaceInDir('./dist', /\.\.\/release\//g, './', ['.js', '.cjs'])
   await findAndReplaceInDir('./dist/contrib', /\.\.\/release\//g, '', [
     '.js',
