@@ -56,15 +56,17 @@ async function main() {
   // Replace direct eval with indirect eval to avoid Vite 8.x/rolldown warnings
   // This transforms eval(...) to (0, eval)(...) which is indirect eval
   // Pattern matches "eval(" preceded by specific characters that indicate direct eval
-  // We specifically target: ASM_CONSTS[...]=eval( and similar patterns
+  const directEvalPattern = /([=\s(])eval\(/g
+  const indirectEvalReplacement = '$1(0, eval)('
+  
   await findAndReplaceInFile(
-    /([=\s(])eval\(/g,
-    '$1(0, eval)(',
+    directEvalPattern,
+    indirectEvalReplacement,
     './dist/pglite.js'
   )
   await findAndReplaceInFile(
-    /([=\s(])eval\(/g,
-    '$1(0, eval)(',
+    directEvalPattern,
+    indirectEvalReplacement,
     './dist/pglite.cjs'
   )
   
