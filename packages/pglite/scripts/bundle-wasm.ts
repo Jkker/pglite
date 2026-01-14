@@ -55,20 +55,15 @@ async function main() {
   
   // Replace direct eval with indirect eval to avoid Vite 8.x/rolldown warnings
   // This transforms eval(...) to (0, eval)(...) which is indirect eval
-  // Pattern matches "eval(" preceded by specific characters that indicate direct eval
-  const directEvalPattern = /([=\s(])eval\(/g
+  // Pattern matches "eval(" preceded by = or whitespace, but not by comma or opening paren
+  // This avoids matching already-indirect eval like (eval( or (0,eval(
+  const directEvalPattern = /([=\s])eval\(/g
   const indirectEvalReplacement = '$1(0, eval)('
   
-  await findAndReplaceInFile(
-    directEvalPattern,
-    indirectEvalReplacement,
-    './dist/pglite.js'
-  )
-  await findAndReplaceInFile(
-    directEvalPattern,
-    indirectEvalReplacement,
-    './dist/pglite.cjs'
-  )
+  const filesToTransform = ['./dist/pglite.js', './dist/pglite.cjs']
+  for (const file of filesToTransform) {
+    await findAndReplaceInFile(directEvalPattern, indirectEvalReplacement, file)
+  }
   
   await findAndReplaceInDir('./dist', /\.\.\/release\//g, './', ['.js', '.cjs'])
   await findAndReplaceInDir('./dist/contrib', /\.\.\/release\//g, '', [
