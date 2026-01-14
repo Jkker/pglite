@@ -53,17 +53,18 @@ const copyFiles = async (srcDir: string, destDir: string) => {
 async function main() {
   await copyFiles('./release', './dist')
   
-  // Replace direct eval with indirect eval to avoid Vite 8.x warnings
+  // Replace direct eval with indirect eval to avoid Vite 8.x/rolldown warnings
   // This transforms eval(...) to (0, eval)(...) which is indirect eval
-  // Pattern matches eval( but not when preceded by . or , or already indirect
+  // Pattern matches "eval(" preceded by specific characters that indicate direct eval
+  // We specifically target: ASM_CONSTS[...]=eval( and similar patterns
   await findAndReplaceInFile(
-    /(?<![.,\w])\beval\s*\(/g,
-    '(0, eval)(',
+    /([=\s(])eval\(/g,
+    '$1(0, eval)(',
     './dist/pglite.js'
   )
   await findAndReplaceInFile(
-    /(?<![.,\w])\beval\s*\(/g,
-    '(0, eval)(',
+    /([=\s(])eval\(/g,
+    '$1(0, eval)(',
     './dist/pglite.cjs'
   )
   
