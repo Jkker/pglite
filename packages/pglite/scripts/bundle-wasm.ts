@@ -52,6 +52,29 @@ const copyFiles = async (srcDir: string, destDir: string) => {
 
 async function main() {
   await copyFiles('./release', './dist')
+
+  // Replace direct eval with indirect eval to avoid Vite 8.x/rolldown warnings
+  // This transforms eval(...) to (0, eval)(...) which is indirect eval
+  // Pattern uses lookbehind to ensure we match "eval(" but NOT:
+  // - when it's a property or identifier suffix (e.g. obj.eval, my_eval)
+  // - when it's already indirect (e.g. (0, eval) or (0,eval))
+  const directEvalPattern = /(?<![\w$.])(?<!0,\s?)eval\(/g
+  const indirectEvalReplacement = '(0, eval)('
+
+  const filesToTransform = ['./dist/pglite.js', './dist/pglite.cjs']
+  for (const file of filesToTransform) {
+    try {
+      await findAndReplaceInFile(
+        directEvalPattern,
+        indirectEvalReplacement,
+        file,
+      )
+    } catch (error) {
+      console.error(`Failed to transform ${file}:`, error)
+      throw error
+    }
+  }
+
   await findAndReplaceInDir('./dist', /\.\.\/release\//g, './', ['.js', '.cjs'])
   await findAndReplaceInDir('./dist/contrib', /\.\.\/release\//g, '', [
     '.js',
@@ -79,7 +102,10 @@ async function main() {
     `require("./postgres.cjs").default`,
     ['.cjs'],
   )
-  await findAndReplaceInDir('./dist/pg_hashids', /\.\.\/release\//g, '', ['.js', '.cjs'])
+  await findAndReplaceInDir('./dist/pg_hashids', /\.\.\/release\//g, '', [
+    '.js',
+    '.cjs',
+  ])
 }
 
 await main()
