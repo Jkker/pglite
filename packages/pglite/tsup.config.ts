@@ -70,7 +70,7 @@ export default defineConfig([
     },
     clean: true,
     external: ['../release/pglite.js', '../release/pglite.cjs'],
-    esbuildPlugins: [replaceAssertPlugin, replaceDirectEvalPlugin],
+    esbuildPlugins: [replaceAssertPlugin],
     minify: minify,
     shims: true, // Convert import.meta.url to a shim for CJS
     format: ['esm', 'cjs'],
@@ -82,5 +82,6 @@ export default defineConfig([
     minify: minify,
     shims: true, // Convert import.meta.url to a shim for CJS
     keepNames: true,
+    esbuildPlugins: [replaceDirectEvalPlugin],
   },
 ])
